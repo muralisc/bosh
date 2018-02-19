@@ -11,6 +11,8 @@ module Bosh::Director
     }
     let(:deployment_name) { 'fake_deployment_name' }
     let(:disk_cid) { 'fake_disk_cid' }
+    let(:fake_disk_size) { 1234 }
+    let(:disk_properties) { { 'size' => fake_disk_size, 'cloud_properties' => {} } }
     let(:job_name) { 'job_name' }
     let(:instance_id) { 'fake_instance_id' }
     let(:event_manager) {Api::EventManager.new(true)}
@@ -250,9 +252,19 @@ module Bosh::Director
           )
         end
         before do
-          allow(Config.cloud).to receive(:attach_disk)
+          allow(Config.cloud).to receive(:attach_disk).and_return(disk_properties)
           allow(Config.cloud).to receive(:set_disk_metadata)
           allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
+        end
+
+        it 'sets the disk size to value returned by cloud cpi' do
+          expect(Config.cloud).to receive(:attach_disk)
+          expect(Config.cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
+          expect(Config.cloud).to receive(:detach_disk)
+          attach_disk_job.perform
+
+          active_disks = instance_model.persistent_disks.select { |disk| disk.disk_cid == disk_cid }
+          expect(active_disks.first.size).to eq(fake_disk_size)
         end
 
         it 'attaches the new disk and sets disk metadata' do
@@ -284,13 +296,13 @@ module Bosh::Director
 
         let(:agent_client) { instance_double(AgentClient, mount_disk: nil, wait_until_ready: nil) }
         before do
-          allow(Config.cloud).to receive(:attach_disk)
+          allow(Config.cloud).to receive(:attach_disk).and_return(disk_properties)
           allow(Config.cloud).to receive(:set_disk_metadata)
           allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
         end
 
         it 'attaches the new disk' do
-          expect(Config.cloud).to receive(:attach_disk)
+          expect(Config.cloud).to receive(:attach_disk).and_return(disk_properties)
           expect(Config.cloud).to receive(:set_disk_metadata).with(disk_cid, hash_including(manifest['tags']))
           attach_disk_job.perform
 

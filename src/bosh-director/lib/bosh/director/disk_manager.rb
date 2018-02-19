@@ -63,8 +63,9 @@ module Bosh::Director
     end
 
     def attach_disk(disk, tags)
-      DeploymentPlan::Steps::AttachDiskStep.new(disk, tags).perform(step_report)
+      disk_properties = DeploymentPlan::Steps::AttachDiskStep.new(disk, tags).perform(step_report)
       mount_disk(disk) if disk.managed?
+      disk_properties
     end
 
     def detach_disk(disk)

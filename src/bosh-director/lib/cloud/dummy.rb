@@ -182,6 +182,10 @@ module Bosh
         settings = read_agent_settings(agent_id)
         settings['disks']['persistent'][disk_id] = 'attached'
         write_agent_settings(agent_id, settings)
+        {
+            'size' => SecureRandom.random_number(1000),
+            'cloud_properties' => {}
+        }
       end
 
       DETACH_DISK_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, disk_id: String} }
