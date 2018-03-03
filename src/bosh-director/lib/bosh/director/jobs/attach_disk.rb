@@ -75,7 +75,11 @@ module Bosh::Director
         end
 
         if instance.state == 'stopped'
-          @disk_manager.attach_disk(disk, instance.deployment.tags)
+          disk_properties = @disk_manager.attach_disk(disk, instance.deployment.tags)
+          if disk_properties
+            disk.update(size: disk_properties['size']) if disk_properties['size']
+            disk.update(cloud_properties: disk_properties['cloud_properties']) if disk_properties['cloud_properties']
+          end
         end
       end
     end
